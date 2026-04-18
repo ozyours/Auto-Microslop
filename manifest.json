@@ -3,6 +3,11 @@
   "name": "Auto-Microslop",
   "version": "1.0",
   "description": "Replaces every instance of 'microsoft' with 'microslop' on all websites.",
+  "permissions": ["storage"],
+  "action": {
+    "default_title": "Auto-Microslop",
+    "default_popup": "popup.html"
+  },
   "content_scripts": [
     {
       "matches": ["<all_urls>"],

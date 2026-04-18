@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Auto-Microslop</title>
+    <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+    <main class="panel">
+        <h1>Auto-Microslop</h1>
+
+        <button id="togglePause" type="button" class="primary">Pause</button>
+
+        <section>
+            <h2>Text replacement list</h2>
+            <div id="replacementList" class="list" role="list"></div>
+
+            <div class="add-row">
+                <input id="newFrom" type="text" placeholder="Find text" aria-label="Find text">
+                <input id="newTo" type="text" placeholder="Replace with" aria-label="Replace with">
+            </div>
+            <button id="addEntry" type="button">Add new entry</button>
+        </section>
+    </main>
+
+    <script src="popup.js"></script>
+</body>
+</html>
