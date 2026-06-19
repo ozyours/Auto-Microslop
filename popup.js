@@ -1,6 +1,8 @@
 const DEFAULT_SETTINGS = {
     paused: false,
-    replacements: [{ from: "microsoft", to: "microslop" }]
+    replacements: [{ from: "microsoft", to: "microslop" }],
+    domainMode: "blacklist",
+    domains: []
 };
 
 const togglePauseButton = document.getElementById("togglePause");
@@ -8,6 +10,11 @@ const replacementList = document.getElementById("replacementList");
 const addEntryButton = document.getElementById("addEntry");
 const newFromInput = document.getElementById("newFrom");
 const newToInput = document.getElementById("newTo");
+const domainList = document.getElementById("domainList");
+const addDomainButton = document.getElementById("addDomain");
+const newDomainInput = document.getElementById("newDomain");
+const modeBlacklist = document.getElementById("modeBlacklist");
+const modeWhitelist = document.getElementById("modeWhitelist");
 
 let settings = DEFAULT_SETTINGS;
 
@@ -20,14 +27,79 @@ function normalizeSettings(raw) {
             .filter(item => item.from.length > 0)
         : DEFAULT_SETTINGS.replacements;
 
+    const domains = Array.isArray(incoming.domains)
+        ? incoming.domains
+            .filter(item => item && typeof item === "string")
+            .map(item => item.trim().toLowerCase())
+            .filter(item => item.length > 0)
+        : DEFAULT_SETTINGS.domains;
+
     return {
         paused: Boolean(incoming.paused),
-        replacements: replacements.length > 0 ? replacements : DEFAULT_SETTINGS.replacements
+        replacements: replacements.length > 0 ? replacements : DEFAULT_SETTINGS.replacements,
+        domainMode: incoming.domainMode === "whitelist" ? "whitelist" : "blacklist",
+        domains
     };
 }
 
 function updatePauseButton() {
     togglePauseButton.textContent = settings.paused ? "Resume" : "Pause";
+}
+
+function updateModeRadios() {
+    modeBlacklist.checked = settings.domainMode === "blacklist";
+    modeWhitelist.checked = settings.domainMode === "whitelist";
+}
+
+function renderDomainList() {
+    domainList.innerHTML = "";
+
+    if (settings.domains.length === 0) {
+        const empty = document.createElement("div");
+        empty.className = "empty";
+        empty.textContent = "No domains yet.";
+        domainList.appendChild(empty);
+        return;
+    }
+
+    settings.domains.forEach((domain, index) => {
+        const row = document.createElement("div");
+        row.className = "row";
+        row.setAttribute("role", "listitem");
+
+        const domainInput = document.createElement("input");
+        domainInput.value = domain;
+        domainInput.placeholder = "Domain";
+        domainInput.setAttribute("aria-label", `Domain ${index + 1}`);
+
+        const deleteButton = document.createElement("button");
+        deleteButton.type = "button";
+        deleteButton.textContent = "X";
+        deleteButton.className = "delete";
+        deleteButton.setAttribute("aria-label", `Delete domain ${index + 1}`);
+
+        domainInput.addEventListener("change", () => {
+            settings.domains[index] = domainInput.value.trim().toLowerCase();
+            sanitizeDomainList();
+            saveSettings();
+        });
+
+        deleteButton.addEventListener("click", () => {
+            settings.domains.splice(index, 1);
+            sanitizeDomainList();
+            saveSettings();
+        });
+
+        row.appendChild(domainInput);
+        row.appendChild(deleteButton);
+        domainList.appendChild(row);
+    });
+}
+
+function sanitizeDomainList() {
+    settings.domains = settings.domains
+        .filter(domain => domain && domain.trim().length > 0)
+        .map(domain => domain.trim().toLowerCase());
 }
 
 function renderReplacementList() {
@@ -103,12 +175,40 @@ function sanitizeReplacementList() {
 function saveSettings() {
     chrome.storage.sync.set({ settings }, () => {
         updatePauseButton();
+        updateModeRadios();
+        renderDomainList();
         renderReplacementList();
     });
 }
 
 togglePauseButton.addEventListener("click", () => {
     settings.paused = !settings.paused;
+    saveSettings();
+});
+
+modeBlacklist.addEventListener("change", () => {
+    if (modeBlacklist.checked) {
+        settings.domainMode = "blacklist";
+        saveSettings();
+    }
+});
+
+modeWhitelist.addEventListener("change", () => {
+    if (modeWhitelist.checked) {
+        settings.domainMode = "whitelist";
+        saveSettings();
+    }
+});
+
+addDomainButton.addEventListener("click", () => {
+    const domain = newDomainInput.value.trim().toLowerCase();
+
+    if (!domain) {
+        return;
+    }
+
+    settings.domains.push(domain);
+    newDomainInput.value = "";
     saveSettings();
 });
 
@@ -129,5 +229,7 @@ addEntryButton.addEventListener("click", () => {
 chrome.storage.sync.get("settings", data => {
     settings = normalizeSettings(data.settings);
     updatePauseButton();
+    updateModeRadios();
+    renderDomainList();
     renderReplacementList();
 });

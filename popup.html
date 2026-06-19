@@ -13,6 +13,30 @@
         <button id="togglePause" type="button" class="primary">Pause</button>
 
         <section>
+            <h2>Working mode</h2>
+            <div class="mode-selector">
+                <label>
+                    <input type="radio" name="domainMode" value="blacklist" id="modeBlacklist">
+                    <span>Blacklist</span> (replace everywhere except listed domains)
+                </label>
+                <label>
+                    <input type="radio" name="domainMode" value="whitelist" id="modeWhitelist">
+                    <span>Whitelist</span> (replace only on listed domains)
+                </label>
+            </div>
+        </section>
+
+        <section>
+            <h2>Domain list</h2>
+            <div id="domainList" class="list" role="list"></div>
+
+            <div class="add-row">
+                <input id="newDomain" type="text" placeholder="Domain (e.g., example.com)" aria-label="Domain">
+            </div>
+            <button id="addDomain" type="button">Add domain</button>
+        </section>
+
+        <section>
             <h2>Text replacement list</h2>
             <div id="replacementList" class="list" role="list"></div>
 

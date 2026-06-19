@@ -1,6 +1,8 @@
 const DEFAULT_SETTINGS = {
     paused: false,
-    replacements: [{ from: "microsoft", to: "microslop" }]
+    replacements: [{ from: "microsoft", to: "microslop" }],
+    domainMode: "blacklist",
+    domains: []
 };
 
 let currentSettings = DEFAULT_SETTINGS;
@@ -36,9 +38,19 @@ function normalizeSettings(raw) {
             .filter(item => item.from.length > 0)
         : DEFAULT_SETTINGS.replacements;
 
+    const domainMode = settings.domainMode === "whitelist" ? "whitelist" : "blacklist";
+    const domains = Array.isArray(settings.domains)
+        ? settings.domains
+            .filter(item => item && typeof item === "string")
+            .map(item => item.trim().toLowerCase())
+            .filter(item => item.length > 0)
+        : DEFAULT_SETTINGS.domains;
+
     return {
         paused,
-        replacements: replacements.length > 0 ? replacements : DEFAULT_SETTINGS.replacements
+        replacements: replacements.length > 0 ? replacements : DEFAULT_SETTINGS.replacements,
+        domainMode,
+        domains
     };
 }
 
@@ -55,6 +67,16 @@ function isIgnoredTextNode(node) {
     return node.parentElement.closest("[contenteditable='true']") !== null;
 }
 
+function shouldApplyOnDomain(settings) {
+    const currentDomain = window.location.hostname.toLowerCase();
+
+    if (settings.domainMode === "whitelist") {
+        return settings.domains.some(domain => currentDomain.includes(domain));
+    }
+
+    return !settings.domains.some(domain => currentDomain.includes(domain));
+}
+
 function applyReplacements(text) {
     let updatedText = text;
 
@@ -67,7 +89,7 @@ function applyReplacements(text) {
 }
 
 function replaceTextInNode(node) {
-    if (currentSettings.paused || !node) {
+    if (currentSettings.paused || !node || !shouldApplyOnDomain(currentSettings)) {
         return;
     }
 
@@ -93,7 +115,7 @@ function replaceTextInNode(node) {
 }
 
 function replacePageText() {
-    if (!document.body || currentSettings.paused) {
+    if (!document.body || currentSettings.paused || !shouldApplyOnDomain(currentSettings)) {
         return;
     }
 
@@ -108,7 +130,7 @@ function loadSettingsAndRun() {
 }
 
 const observer = new MutationObserver(mutations => {
-    if (currentSettings.paused) {
+    if (currentSettings.paused || !shouldApplyOnDomain(currentSettings)) {
         return;
     }
 
